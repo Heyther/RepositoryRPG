@@ -35,6 +35,10 @@ import java.util.TreeSet;
  *          classes.<br>
  *          Changed some internal variable names to be more clear.<br>
  *          Reorganized methods internally.<br>
+ *          <b>3.0b</b> <u>July 2nd 2015</u><br>
+ *          Fixed an issue that would case get(K) to throw null pointer exceptions under
+ *          certain circumstances. The method now properly returns a null value for a null key.
+ *          Removed more unnecessary documentation.
  * 
  * @author Robert Ferguson: Primary coder.
  * @author Ian Cresse: Code review for versions 0.5 through 2.0.
@@ -61,8 +65,9 @@ public final class RPGHashTable <K, V> implements Serializable
     private static final float MAX_LOAD = .75f;
 
     /**
-     * Creates a new hash table with 2^10 (1024) buckets. K is the type of Key and V is the
-     * associated value.
+     * Creates a new RPGHashTable with 2^10 (1024) buckets. K is the type of Key and V is the
+     * associated value. If the RPGHashTable gets too full, it will automatically resize and
+     * rehash itself.
      */
     public RPGHashTable()
     {
@@ -78,6 +83,7 @@ public final class RPGHashTable <K, V> implements Serializable
 
     /**
      * A private method that takes a key and returns an integer in the range [0, capacity)<br>
+     * A good hash function is:<br>
      * -Deterministic: A given K should always have the same hashValue<br>
      * -Uniformity: Each number in a range should have roughly equal probability.<br>
      * -Distribution: Numbers should avoid clustering.
@@ -96,6 +102,7 @@ public final class RPGHashTable <K, V> implements Serializable
     /**
      * A private method that takes a key and returns an integer in the range (0, capacity).
      * Note that unlike the primary hash, this method is unable to return 0.<br>
+     * A good hash function is:<br>
      * -Deterministic: A given K should always have the same hashValue<br>
      * -Uniformity: Each number in a range should have roughly equal probability.<br>
      * -Distribution: Numbers should avoid clustering.
@@ -109,11 +116,11 @@ public final class RPGHashTable <K, V> implements Serializable
         secondHash ^= (secondHash >> 4) ^ (secondHash >> 9);
         secondHash = ~(1 << 31) & ((secondHash ^ (secondHash >> 12) ^ (secondHash >> 7)));
 
+        // always at least 1, no effect if already greater than 1
         return (secondHash % tableSize) | 1;
     }
 
     /**
-     * 
      * Adds the passed value to the bucket hash(key). If there is already a value in bucket
      * hash(key), then the structure will be probed until a proper bucket is found.
      * 
@@ -124,15 +131,11 @@ public final class RPGHashTable <K, V> implements Serializable
     public void put(final K key, final V value)
     {
         if (currentLoad >= MAX_LOAD)
-        {
             rehashTable();
-        }
 
         int hashcode = primaryHash(key);
         int next = secondaryHash(key);
 
-        // Same thing as getting, we need to search for the same Key, or the next available
-        // node
         if (table.get(hashcode) == null)
         {
             table.set(hashcode, (new Entry(key, value)));
@@ -147,6 +150,7 @@ public final class RPGHashTable <K, V> implements Serializable
 
             if (table.get(hashcode) == null)
                 currentNumEntries++;
+
             table.set(hashcode, (new Entry(key, value)));
         }
 
@@ -154,81 +158,72 @@ public final class RPGHashTable <K, V> implements Serializable
     }
 
     /**
-     * Return a value for the specified key from the bucket hash(searchKey). If hash(searchKey)
-     * doesn't contain the value, linear probing is used to return the correct value.
+     * Return a value for the specified key from the bucket hash(searchKey).
      * 
      * @param searchKey The key to search with.
      * @return the value to which the specified key is mapped, or null if this map contains no
      *         mapping for the key.
-     * @throws NullPointerException if the specified key is null or is not in the map.
      */
     public V get(final K searchKey)
     {
-        int searchHash = primaryHash(searchKey);
-        // int steps = 0;
-
-        if (table.get(searchHash).key.equals(searchKey))
+        if (searchKey != null)
         {
-            // System.out.println("Steps in get " + searchKey.toString() + ": " + steps);
-            return table.get(searchHash).value;
-        }
-        // System.out.println("Bumped into: " + table.get(searchHash));
+            int searchHash = primaryHash(searchKey);
 
-        int stop = searchHash;
-        int incrementHash = secondaryHash(searchKey);
-
-        do
-        {
-            searchHash = (searchHash + incrementHash) % tableSize;
-            if (table.get(searchHash).key.equals(searchKey))
+            if (table.get(searchHash) != null && table.get(searchHash).key.equals(searchKey))
             {
-                // System.out.println("Steps in get " + searchKey.toString() + ": " + steps);
                 return table.get(searchHash).value;
             }
-            // System.out.println("Bumped into: " + table.get(searchHash));
-            // steps++;
-        } while (table.get(searchHash) != null && searchHash != stop);
+
+            int stop = searchHash;
+            int incrementHash = secondaryHash(searchKey);
+
+            do
+            {
+                searchHash = (searchHash + incrementHash) % tableSize;
+                if (table.get(searchHash) != null
+                        && table.get(searchHash).key.equals(searchKey))
+                {
+                    return table.get(searchHash).value;
+                }
+            } while (table.get(searchHash) != null && searchHash != stop);
+        }
 
         // The key was never found, so return a null and let them deal with it.
-        // System.out.println("Steps in get " + searchKey.toString() + ": " + steps);
         return null;
     }
 
     /**
-     * Returns true if the key is in the map.
+     * Returns true if the key is in the map. Will always return false for a null value.
      * 
      * @param searchKey The key to check for.
      * @return True if the key is found, false otherwise.
      */
     public boolean containsKey(final K searchKey)
     {
-        int searchHash = primaryHash(searchKey);
-
-        if (table.get(searchHash) != null && table.get(searchHash).key.equals(searchKey))
+        if (searchKey != null)
         {
-            // found it immediately
-            return true;
-        }
+            int searchHash = primaryHash(searchKey);
 
-        // prepare to find it
-        int stop = searchHash;
-        int incrementHash = secondaryHash(searchKey);
-
-        // Probe until we find a null entry or we've gone over the entire table.
-        do
-        {
-            searchHash = (searchHash + incrementHash) % tableSize;
-            // perform a null check before looking at fields. Because of how the && operator
-            // works in Java, if the node is null, we will never look at it's fields, which
-            // allows us to avoid null pointer exceptions.
             if (table.get(searchHash) != null && table.get(searchHash).key.equals(searchKey))
             {
-                // found it eventually
                 return true;
             }
-        } while (table.get(searchHash) != null && searchHash != stop);
 
-        // didn't find it
+            int stop = searchHash;
+            int incrementHash = secondaryHash(searchKey);
+
+            do
+            {
+                searchHash = (searchHash + incrementHash) % tableSize;
+
+                if (table.get(searchHash) != null
+                        && table.get(searchHash).key.equals(searchKey))
+                {
+                    return true;
+                }
+            } while (table.get(searchHash) != null && searchHash != stop);
+        }
         return false;
     }
 
@@ -246,13 +241,14 @@ public final class RPGHashTable <K, V> implements Serializable
                 temp.add(table.get(i));
             }
         }
+
         table.clear();
 
         for (int i = 0; i < (tableSize * 2); i++)
         {
-            table.add(null); // Fill the array list with nulls so it's considered of the
-                             // correct size.
+            table.add(null);
         }
+
         tableSize *= 2;
 
         for (Entry e : temp)
@@ -271,8 +267,6 @@ public final class RPGHashTable <K, V> implements Serializable
                     hashcode = (hashcode + next) % tableSize;
                 }
 
-                if (table.get(hashcode) == null)
-                    currentNumEntries++;
                 table.set(hashcode, e);
             }
         }
@@ -307,7 +301,7 @@ public final class RPGHashTable <K, V> implements Serializable
     }
 
     /**
-     * Converts the hash map contents to a String. Keys and values are responsible for
+     * Converts the RPGHashTable contents to a String. Keys and values are responsible for
      * providing their own toString() method.
      */
     @Override
@@ -330,15 +324,9 @@ public final class RPGHashTable <K, V> implements Serializable
                     afterFirst = true;
                     ts.append(table.get(i).toString());
                 }
-
             }
         }
 
-        // for (Entry e : table)
-        // {
-        // if (e != null)
-        // ts.append(' ' + e.toString() + ',');
-        // }
         ts.append('}');
 
         return ts.toString();
@@ -348,16 +336,6 @@ public final class RPGHashTable <K, V> implements Serializable
     {
         private final K key;
         private final V value;
-
-        // private int moved;
-        /*
-         * private Entry(final int m, final K k, final V v)
-         * {
-         * key = k;
-         * value = v;
-         * moved = m;
-         * }
-         */
 
         private Entry(final K k, final V v)
         {

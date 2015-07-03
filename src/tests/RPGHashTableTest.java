@@ -28,22 +28,12 @@ public class RPGHashTableTest
     }
 
     @Test
-    public void testRPGHashTableInt()
+    public void testGetAndPut()
     {
-        testHash = new RPGHashTable<String, String>();
-        assertTrue(testHash != null);
-    }
-
-    @Test
-    public void testPut()
-    {
-        testHash.put("Key", "Value");
-        assertTrue(testHash.getSize() == 1);
-    }
-
-    @Test
-    public void testGet()
-    {
+        testHash.get(null);
+        testHash.containsKey(null);
+        testHash.containsKey("Get");
+        testHash.get("Key");
         testHash.put("Key", "Value");
         assertTrue(testHash.get("Key").equals("Value"));
     }
@@ -72,15 +62,6 @@ public class RPGHashTableTest
             garbageKey.setLength(0);
             garbageValue.setLength(0);
         }
-
-        testHash.put("Key", "Value");
-        testHash.put("Ashley", "Chambers");
-        testHash.put("Robert", "Ferguson");
-        testHash.put("Ian", "Cresse");
-        testHash.put("Wil", "Sunseri");
-        testHash.put("Blank", "String");
-        testHash.put("Seventh", "Entry");
-        testHash.put("Should", "Expand Again");
 
         assertTrue(true); // if we got here, we didn't crash.
     }
