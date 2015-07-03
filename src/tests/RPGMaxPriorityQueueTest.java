@@ -3,6 +3,7 @@ package tests;
 
 import static org.junit.Assert.*;
 import logic.data_structures.RPGMaxPriorityQueue;
+import logic.data_structures.RPGMinPriorityQueue;
 import logic.data_structures.RPGPriorityQueue;
 
 import org.junit.Before;
@@ -11,7 +12,7 @@ import org.junit.Test;
 public class RPGMaxPriorityQueueTest
 {
 
-    public RPGPriorityQueue<Integer> testQueue = new RPGMaxPriorityQueue<>();
+    public RPGPriorityQueue<Integer> testQueue = new RPGMaxPriorityQueue<Integer>();
 
     @Before
     public void setUp() throws Exception
@@ -23,6 +24,24 @@ public class RPGMaxPriorityQueueTest
     public void testCustomPriorityQueue()
     {
         assertTrue(testQueue != null);
+
+        testQueue.add(1);
+        testQueue.add(5);
+        testQueue.add(202);
+        testQueue.add(203);
+        testQueue.add(200);
+        testQueue.add(201);
+
+        testQueue = new RPGMinPriorityQueue<Integer>((RPGMaxPriorityQueue<Integer>) testQueue);
+
+        assertTrue(testQueue.size() == 6);
+        assertTrue(testQueue.remove() == 1);
+
+        testQueue = new RPGMaxPriorityQueue<Integer>((RPGMinPriorityQueue<Integer>) testQueue);
+
+        assertTrue(testQueue.size() == 5);
+        assertTrue(testQueue.remove() == 203);
+
     }
 
     @Test

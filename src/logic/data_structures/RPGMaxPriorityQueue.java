@@ -5,29 +5,51 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An array implementation of a PriorityQueue. The child of a node is located at indexes
- * (2i+1) and (2i+2). 0 has children at 1 and 2, 1 has children at 3 and 4, and so on. By
- * extension, the parent of a node is at the (i - 1)/2 (6's parent is at 5/2, 2. 10's parent is
- * at 9/2, 4) etc.<br>
- * This implementation is a maximum priority queue.
+ * A generic priority queue that favors elements that compare positively to other comparable
+ * elements.
  *
  * @author Robert Ferguson Primary coder.
  * @param <T> The object that the queue holds. Must implement comparable. compareTo is assumed
  *            to return a negative number if an object is smaller than the object it
  *            is being compared to.
+ * @version <b>1.0</b> <u>July 1st 2015</u><br>
+ *          Created based on RPGMinPriorityQueue.<br>
+ *          <b>1.1</b> <u>July 2nd 2015</u><br>
+ *          Wrote a constructor that takes an RPGPriorityQueue object.
  */
 public final class RPGMaxPriorityQueue <T extends Comparable<T>> implements
         RPGPriorityQueue<T>
 {
+    /** Serial Version UID */
+    private static final long serialVersionUID = 4662617269096679258L;
+
+    /** The list of objects. */
     private List<T> prio;
+
+    /** The amount of objects currently in the list. */
     private int size;
 
     /**
-     * Creates a new priorityQueue.
+     * Creates a new RPGMaxPriorityQueue.
      */
     public RPGMaxPriorityQueue()
     {
         prio = new ArrayList<T>();
+    }
+
+    /**
+     * Creates a new RPGMaxPriorityQueue based on the passed RPGPriorityQueue of the same
+     * generic type.<br>
+     * Calls to this constructor should be done like this:<br>
+     * example = new RPGMaxPriorityQueue<Integer>((RPGMinPriorityQueue<Integer>) example);<br>
+     * Note that the passed queue must be cast to the type that it currently is.
+     */
+    public RPGMaxPriorityQueue(final RPGPriorityQueue<T> oldQueue)
+    {
+        prio = new ArrayList<T>();
+
+        while (!oldQueue.isEmpty())
+            this.add(oldQueue.remove());
     }
 
     /**
@@ -83,19 +105,20 @@ public final class RPGMaxPriorityQueue <T extends Comparable<T>> implements
      * 
      * @return the index that the element sunk to.
      */
-    private int sink()
+    private void sink()
     {
         int index = 0;
         while (hasLeftChild(index))
         {
             int smallerChild = childToPromote(index);
             if (prio.get(index).compareTo(prio.get(smallerChild)) <= 0)
+            {
                 swapIndexes(index, smallerChild);
+                index = smallerChild;
+            }
             else
-                return index; // it's sunk as low as it needs to
-            index = smallerChild;
+                break; // it's sunk as low as it needs to
         }
-        return index;
     }
 
     /**
