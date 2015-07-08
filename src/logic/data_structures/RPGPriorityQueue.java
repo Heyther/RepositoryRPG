@@ -1,6 +1,8 @@
 
 package logic.data_structures;
 
+import java.io.Serializable;
+
 /**
  * Specifies methods for an RPGPriorityQueue.
  * 
@@ -10,7 +12,7 @@ package logic.data_structures;
  *            to return a negative number of the object comparing is smaller than the object it
  *            is being compared to.
  */
-public interface RPGPriorityQueue <T>
+public interface RPGPriorityQueue <T> extends Serializable
 {
     /**
      * Adds a new element to the queue.

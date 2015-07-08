@@ -2,6 +2,9 @@
 package tests;
 
 import static org.junit.Assert.*;
+
+import java.util.Random;
+
 import logic.data_structures.RPGHashTable;
 
 import org.junit.Before;
@@ -25,22 +28,12 @@ public class RPGHashTableTest
     }
 
     @Test
-    public void testRPGHashTableInt()
+    public void testGetAndPut()
     {
-        testHash = new RPGHashTable<String, String>(16);
-        assertTrue(testHash != null);
-    }
-
-    @Test
-    public void testPut()
-    {
-        testHash.put("Key", "Value");
-        assertTrue(testHash.getSize() == 1);
-    }
-
-    @Test
-    public void testGet()
-    {
+        testHash.get(null);
+        testHash.containsKey(null);
+        testHash.containsKey("Get");
+        testHash.get("Key");
         testHash.put("Key", "Value");
         assertTrue(testHash.get("Key").equals("Value"));
     }
@@ -48,16 +41,27 @@ public class RPGHashTableTest
     @Test
     public void testRehash()
     {
-        testHash = new RPGHashTable<String, String>(4);
+        testHash = new RPGHashTable<String, String>();
+        StringBuilder garbageKey = new StringBuilder();
+        StringBuilder garbageValue = new StringBuilder();
+        Random rand = new Random();
 
-        testHash.put("Key", "Value");
-        testHash.put("Ashley", "Chambers");
-        testHash.put("Robert", "Ferguson");
-        testHash.put("Ian", "Cresse");
-        testHash.put("Wil", "Sunseri");
-        testHash.put("Blank", "String");
-        testHash.put("Seventh", "Entry");
-        testHash.put("Should", "Expand Again");
+        for (int i = 0; i < 8000; i++)
+        {
+            for (int j = 0; j < 10; j++)
+            {
+                garbageKey.append(rand.nextInt(128));
+            }
+            for (int k = 0; k < 10; k++)
+            {
+                garbageValue.append(rand.nextInt(128));
+            }
+
+            testHash.put(garbageKey.toString(), garbageValue.toString());
+
+            garbageKey.setLength(0);
+            garbageValue.setLength(0);
+        }
 
         assertTrue(true); // if we got here, we didn't crash.
     }

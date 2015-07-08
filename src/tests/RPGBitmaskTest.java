@@ -14,7 +14,7 @@ public class RPGBitmaskTest
     @Before
     public void setUp() throws Exception
     {
-        testMask = testMask.reset();
+        testMask = RPGBitmask.ALL_FALSE;
     }
 
     @Test
@@ -81,7 +81,7 @@ public class RPGBitmaskTest
             testMask = testMask.toggleBit(1);
         }
 
-        testMask = testMask.reset();
+        testMask = RPGBitmask.ALL_FALSE;
 
         assertEquals(new RPGBitmask(), testMask);
     }

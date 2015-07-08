@@ -1,9 +1,13 @@
 
 package logic.data_structures;
 
+import java.io.Serializable;
+
 /**
  * An immutable class which allows 32 boolean values to be stored in the space of a single
- * integer, 8 bytes.
+ * integer, 8 bytes.<br>
+ * When specifying a bit for any of the methods, keep in mind that the first bit is bit 0 and
+ * the last bit is bit 31. Numbers outside this range will throw exceptions.<br>
  * 
  * @version <b>1.0</b> <u>June 29th 2015</u><br>
  *          Created class and wrote initial methods.<br>
@@ -11,17 +15,26 @@ package logic.data_structures;
  *          Added class constants for a new RPGBitmask object, which are intended to
  *          be used instead of the constructor.<br>
  *          Deprecated the public, no argument constructor.<br>
- *          Added method RPGBitMask toggleBit(toggle). More information can be found in it's
- *          javadoc. <br>
+ *          Added method RPGBitMask toggleBit(int). More information can be found in
+ *          it's javadoc. <br>
  *          Updated documentation of most methods.<br>
- *          Implemented equals(Object obj), and hashcode() and added documentation.<br>
+ *          Implemented equals(Object), and hashcode() and added documentation.<br>
  *          <b>1.1b</b> <u>July 1st 2015</u><br>
- *          Renamed class to RPGBitmask. All methods updated to return an RPGBitmask object.<br>
+ *          Renamed class to RPGBitmask. All methods updated accordingly.<br>
  *          Corrected grammar and spelling errors in some documentation.<br>
+ *          <b>1.2</b> <u>July 2nd 2015</u><br>
+ *          Rewrote toggleBit(int) to no longer use other methods within the
+ *          class.<br>
+ *          Rewrote equals(Object) to be less redundant.
+ *          Implemented Serializable.<br>
+ * 
  * @author Robert Ferguson: Primary Coder.
  */
-public final class RPGBitmask
+public final class RPGBitmask implements Serializable
 {
+    /** Serial Version UID */
+    private static final long serialVersionUID = 1603455540404993811L;
+
     /** The bits storing the booleans. */
     private final int bits;
 
@@ -42,8 +55,7 @@ public final class RPGBitmask
     }
 
     /**
-     * Creates a new RPGBitMask with the bits being equal to the bits from a different
-     * RPGBitMask.
+     * Creates a new RPGBitMask with the bits being equal to the bits from a passed integer.
      * 
      * @param theBits the new booleans.
      */
@@ -65,20 +77,6 @@ public final class RPGBitmask
         if (toggle < 0 || toggle > 31)
             throw new IllegalArgumentException("You must specify a bit between 0 and 31.");
 
-        /*
-         * The code below:
-         * toggle = 4;
-         * 1 : 0000 0000 0000 0000 0000 0000 0000 0001
-         * << 4: 0000 0000 0000 0000 0000 0000 0001 0000
-         * ~ : 1111 1111 1111 1111 1111 1111 1110 1111
-         * 1 & 1 = 1
-         * 0 & 1 = 0
-         * All 0's remain as 0.
-         * All 1's remain as 1.
-         * If the toggled bit is 1, it will turn to 0.
-         * If the toggled bit is 0, it will remain 0.
-         * Therefore: the specified bit will always be 0.
-         */
         return new RPGBitmask(bits & ~(1 << toggle));
     }
 
@@ -94,20 +92,6 @@ public final class RPGBitmask
     {
         if (toggle < 0 || toggle > 31)
             throw new IllegalArgumentException("You must specify a bit between 0 and 31.");
-        /*
-         * The code below:
-         * toggle = 8;
-         * 1 : 0000 0000 0000 0000 0000 0000 0000 0001
-         * << 8: 0000 0000 0000 0000 0000 0001 0000 0000
-         * 1 | 1 = 1
-         * 0 | 1 = 1
-         * 0 | 0 = 0
-         * If the toggled bit is 1, it will remain 1.
-         * If the toggled bit is 0, it turn in to 1.
-         * Therefore: the specified bit will always be 1.
-         * Other bits, whether they are 0 or 1, are unaffected by the 0's in the rest of the
-         * bit string.
-         */
 
         return new RPGBitmask(bits | (1 << toggle));
     }
@@ -118,7 +102,7 @@ public final class RPGBitmask
      * it is turned on.<br>
      * <br>
      * Note that unlike turnBitOff and turnBitOn, this method will always return a
-     * RPGBitmask that is different from the object it was based on.
+     * RPGBitmask that is different from the RPGBitmask it was based on.<br>
      * 
      * @param toggle The bit to toggle. Must be between 0 and 31, inclusive.
      * @throws IllegalArgumentException if the passed number is out of range.
@@ -129,14 +113,7 @@ public final class RPGBitmask
         if (toggle < 0 || toggle > 31)
             throw new IllegalArgumentException("You must specify a bit between 0 and 31.");
 
-        /*
-         * See the comments within the used methods to see how they work.
-         */
-
-        if (checkBit(toggle))
-            return turnBitOff(toggle);
-        else
-            return turnBitOn(toggle);
+        return new RPGBitmask(bits ^ (1 << toggle));
     }
 
     /**
@@ -155,21 +132,12 @@ public final class RPGBitmask
     }
 
     /**
-     * Returns a new RPGBitMask object that is reset to the initial values. Functionally
-     * similar to using the new keyword on a RPGBitMask.
-     * 
-     * @return A RPGBitMask object that is entirely false.
-     */
-    public RPGBitmask reset()
-    {
-        return new RPGBitmask(0);
-    }
-
-    /**
      * The hashCode of a RPGBitmask is equal to the number represented by the stored
      * booleans. That is, if the 5 and 6 bits are on and all other bits are off, the hashcode
      * is equal to ((2^6) + (2^5)), 96. <br>
-     * This method does not return direct reference to the stored integer.
+     * If you want to compare two RPGBitmasks, for equality use {@link #equals(Object)}.<br>
+     * If you want a String representation of the bits, use {@link #toString()}<br>
+     * This method <b>does not</b> return direct reference to the stored integer.
      */
     @Override
     public int hashCode()
@@ -186,37 +154,22 @@ public final class RPGBitmask
     @Override
     public boolean equals(final Object obj)
     {
-        // A null object is not a RPGBitmask
         if (obj == null)
             return false;
 
         if (obj instanceof RPGBitmask)
         {
-            /*
-             * Any bit XOR itself is equal to 0:
-             * 1 XOR 1 = 0
-             * 0 XOR 0 = 0
-             * Any bit XOR ~itself is equal to 1.
-             * 0 XOR ~0 -> 0 XOR 1 = 1
-             * 1 XOR ~1 -> 1 XOR 0 = 1
-             * Because of this, any string of bits XOR itself will be entirely 0's.
-             */
             RPGBitmask temp = new RPGBitmask(((RPGBitmask) obj).bits ^ bits);
 
-            if (temp.bits != 0)
-                return false;
-            else
+            if (temp.bits == 0)
                 return true;
         }
-        else
-            // The obj wasn't a RPGBitmask at all, and the two cannot be equal.
-            return false;
+        return false;
     }
 
     /**
      * Returns a a string of 1's and 0's. If a value is 1 it is true in the RPGBitmask. If
      * it is 0, then it is false.<br>
-     * <br>
      * If you want the number represented by the boolean values, use {@link #hashCode()}
      * instead.
      */
