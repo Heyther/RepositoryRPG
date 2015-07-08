@@ -7,7 +7,7 @@ package logic.units;
  * @author Robert
  *
  */
-public abstract class Units
+public abstract class Unit
 {
 
 }
